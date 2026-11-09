@@ -1,0 +1,344 @@
+{
+  "name": "My workflow 4",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-lead",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "970fd6d4-4e40-4083-b68f-83d76fff354d",
+      "name": "Webhook",
+      "webhookId": "2c61fd83-ec3a-4c07-b740-9f1a51bd14e3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "08bdca7b-0c2c-4f1c-8a9c-be1c21619bf3",
+              "leftValue": "={{ $json.email }}`, regex `^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        448,
+        0
+      ],
+      "id": "55b83ade-3919-462a-a8d6-9bfb35bf8367",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a lead qualification assistant for a small web design business.\nScore this inquiry from 1 to 10 for how likely it is to become a paying customer.\n\nName: {{ $json.name }}\nMessage: {{ $json.message }}\n\nRules:\n8-10 = clear need, plus a budget or timeline.\n5-7 = interested but vague.\n1-4 = spam, unrelated, or no real need.\n\nReturn ONLY valid JSON, nothing else:\n{\"score\": number, \"temperature\": \"hot\" or \"warm\" or \"cold\", \"reason\": \"one short sentence\"}\n```\nChange \"web design business\" to the client's business when you demo it",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        720,
+        -80
+      ],
+      "id": "7918ac6b-6823-44e0-aaba-a40804faa7e9",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        656,
+        128
+      ],
+      "id": "6183377d-fbfe-4023-bb43-4171ee18192a",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "email": "={{ $json.email }}",
+        "additionalFields": {
+          "customPropertiesUi": {
+            "customPropertiesValues": [
+              {
+                "value": "={{ $json.score }}"
+              },
+              {
+                "value": "={{ $json.temperature }}"
+              },
+              {
+                "value": "={{ $json.reason }}"
+              }
+            ]
+          },
+          "firstName": "={{ $json.firstName }}",
+          "lastName": "={{ $json.lastName }}",
+          "phoneNumber": "={{ $json.phone }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        -80
+      ],
+      "id": "e0fafe3c-2312-45e8-9056-afe6ab6e0f0e",
+      "name": "Create or update a contact"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "",
+          "cachedResultUrl": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "",
+          "cachedResultUrl": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1536,
+        -80
+      ],
+      "id": "6420c0d8-061b-4901-b22d-b448b38379cc",
+      "name": "Append or update row in sheet"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "97fce917-4c4c-41c4-b026-0bc14e840542",
+              "leftValue": "={{ $('Parse Score').first().json.score }}",
+              "rightValue": 8,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1760,
+        -80
+      ],
+      "id": "fa301e57-bc0b-43df-92e8-6bc11cdad31a",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "text": "=Hot lead ({{ $('Parse Score').item.json.score }}/10) Name: {{ $('Parse Score').item.json.name }} Email: {{ $('Parse Score').item.json.email }} Why: {{ $('Parse Score').item.json.reason }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1984,
+        -176
+      ],
+      "id": "3c938365-c93e-4c4e-a4f6-4dd6ea1ba065",
+      "name": "Send a text message",
+      "webhookId": "eaeb0df9-4ec1-42d1-9c77-4f216791b4ec"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $json.body || $json;\nconst name = (b.name || '').trim();\nconst email = (b.email || '').trim().toLowerCase();\nreturn [{ json: {\n  name, email,\n  firstName: name.split(' ')[0] || '',\n  lastName: name.split(' ').slice(1).join(' '),\n  phone: (b.phone || '').trim(),\n  message: (b.message || '').trim(),\n  source: b.source || 'website form',\n  created_at: new Date().toISOString()\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "26c97eab-3188-4c27-bd52-922f8da6e999",
+      "name": "Clean"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.text || $json.output || '';\nlet ai;\ntry {\n  ai = JSON.parse(raw.replace(/```json|```/g, '').trim());\n} catch (e) {\n  ai = { score: 0, temperature: 'review', reason: 'AI output could not be read, check manually' };\n}\nreturn [{ json: { ...$('Clean').first().json, ...ai } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        -80
+      ],
+      "id": "dc14f607-1031-459f-ab92-c719ace4bf22",
+      "name": "Parse Score"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Clean",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Parse Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or update a contact": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Score": {
+      "main": [
+        [
+          {
+            "node": "Create or update a contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f75e20f7-26af-43f8-85ca-f450b2d694d8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "62322ed5de61cc0dfd3beb79d12a353e862db2b38c0c82a833738587af1bf084"
+  },
+  "nodeGroups": [],
+  "id": "Y3ziU6qUM8jxTXs5",
+  "tags": []
+}
