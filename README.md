@@ -5,7 +5,7 @@ An n8n workflow that turns a web form into a qualified CRM record.
 ## What it does
 1. Receives a lead through a webhook.
 2. Cleans and validates the data (invalid emails are logged, not lost).
-3. Scores the lead 1-10 with Gemini and explains why.
+3. Scores the lead 1-10 with Anthropic(claude) and explains why.
 4. Creates or updates the contact in HubSpot (no duplicates, matched by email).
 5. Logs the lead in Google Sheets.
 6. Sends a Telegram alert for hot leads (score 8 or higher).
